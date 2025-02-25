@@ -59,7 +59,7 @@ class OracleBuilder extends Builder
      */
     protected function createBlueprint($table, Closure $callback = null)
     {
-        $blueprint = new OracleBlueprint($table, $callback);
+        $blueprint = new OracleBlueprint($this->connection, $table, $callback);
         $blueprint->setTablePrefix($this->connection->getTablePrefix());
         $blueprint->setMaxLength($this->grammar->getMaxLength());
 
@@ -134,7 +134,7 @@ class OracleBuilder extends Builder
     {
         /** @var \Yajra\Oci8\Schema\Grammars\OracleGrammar $grammar */
         $grammar = $this->grammar;
-        $sql = $grammar->compileTableExists();
+        $sql = $grammar->compileTableExists($this->getCurrentSchemaName(), 'all_tables');
 
         $database = $this->connection->getConfig('username');
         if ($this->connection->getConfig('prefix_schema')) {
@@ -202,14 +202,14 @@ class OracleBuilder extends Builder
      * @param  string  $reference
      * @return array
      */
-    protected function parseSchemaAndTable($reference)
+    public function parseSchemaAndTable($reference, $withDefaultSchema = null)
     {
         $parts = explode('.', $reference);
 
         // We will use the default schema unless the schema has been specified in the
         // query. If the schema has been specified in the query then we can use it
         // instead of a default schema configured in the connection search path.
-        $schema = $this->connection->getConfig('username');
+        $schema = $withDefaultSchema ?? $this->connection->getConfig('username');
 
         if (count($parts) === 2) {
             $schema = $parts[0];
@@ -265,11 +265,11 @@ class OracleBuilder extends Builder
      *
      * @return array
      */
-    public function getTables()
+    public function getTables($schema = null)
     {
         return $this->connection->getPostProcessor()->processTables(
             $this->connection->selectFromWriteConnection(
-                $this->grammar->compileTables($this->connection->getConfig('username'))
+                $this->grammar->compileTables($schema ?? $this->connection->getConfig('username'))
             )
         );
     }

@@ -2,7 +2,6 @@
 
 namespace Yajra\Oci8\Schema\Grammars;
 
-use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar;
 use Illuminate\Support\Fluent;
@@ -188,9 +187,11 @@ class OracleGrammar extends Grammar
     /**
      * Compile the query to determine if a table exists.
      *
+     * @param $schema
+     * @param $table
      * @return string
      */
-    public function compileTableExists()
+    public function compileTableExists($schema, $table)
     {
         return 'select * from all_tables where upper(owner) = upper(?) and upper(table_name) = upper(?)';
     }
@@ -512,10 +513,9 @@ class OracleGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @param  \Illuminate\Database\Connection  $connection
      * @return array
      */
-    public function compileRenameColumn(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileRenameColumn(Blueprint $blueprint, Fluent $command): array
     {
         $table = $this->wrapTable($blueprint);
 
@@ -909,12 +909,11 @@ class OracleGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @param  \Illuminate\Database\Connection  $connection
      * @return array|string
      *
      * @throws \RuntimeException
      */
-    public function compileChange(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileChange(Blueprint $blueprint, Fluent $command)
     {
         $columns = [];
 
@@ -1029,7 +1028,7 @@ class OracleGrammar extends Grammar
      * @param  string  $owner
      * @return string
      */
-    public function compileTables(string $owner): string
+    public function compileTables($schema): string
     {
         return 'select lower(all_tab_comments.table_name)  as "name",
                 lower(all_tables.owner) as "schema",
@@ -1039,8 +1038,8 @@ class OracleGrammar extends Grammar
             from all_tables
                 join all_tab_comments on all_tab_comments.table_name = all_tables.table_name
                 left join user_segments on user_segments.segment_name = all_tables.table_name
-            where all_tables.owner = \''.strtoupper($owner).'\'
-                and all_tab_comments.owner = \''.strtoupper($owner).'\'
+            where all_tables.owner = \''.strtoupper($schema).'\'
+                and all_tab_comments.owner = \''.strtoupper($schema).'\'
                 and all_tab_comments.table_type in (\'TABLE\')
             group by all_tab_comments.table_name, all_tables.owner, all_tables.num_rows,
                 all_tables.avg_row_len, all_tables.blocks, all_tab_comments.comments

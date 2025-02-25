@@ -373,7 +373,7 @@ class Oci8Connection extends Connection
      */
     protected function getDefaultSchemaGrammar()
     {
-        ($grammar = new SchemaGrammar)->setConnection($this);
+        $grammar = new SchemaGrammar($this);
 
         return $this->withTablePrefix($grammar);
     }
